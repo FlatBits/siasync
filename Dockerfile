@@ -1,3 +1,21 @@
+# build siasync
+FROM ubuntu:20.04 AS builder
+
+ARG GO_VERSION=1.14.4
+
+RUN echo "Installing apt dependencies" && apt-get update && apt-get install -y curl git build-essential
+
+RUN echo "Installing golang ${GO_VERSION}" && curl -sSL https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xz
+
+ENV PATH=$PATH:/usr/local/go/bin
+
+RUN echo "Clone Siasync Repo" && git clone https://github.com/tbenz9/siasync.git /app
+
+WORKDIR /app
+
+RUN echo "Build Siasync" && make dependencies && make
+
+# run siasync
 FROM ubuntu:20.04
 
 ENV PATH /opt/siasync/bin:$PATH
@@ -18,7 +36,7 @@ ENV SIASYNC_SIZE_ONLY false
 ENV SIASYNC_SYNC_ONLY false
 ENV SIASYNC_DRY_RUN false
 
-COPY siasync /opt/siasync
+COPY --from=builder /app/siasync /opt/siasync/bin/siasync
 COPY scripts /scripts
 
 WORKDIR /opt/siasync
